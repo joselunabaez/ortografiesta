@@ -25,26 +25,6 @@ Aplicación interactiva para aprender ortografía española con mecánicas de ju
 | **Tailwind CSS**    | Estilización con clases utilitarias y diseño responsive                    |
 | **React Router**    | Manejo de navegación y rutas                                               |
 
-# 📂 Estructura del Proyecto Next.js
-## 🗂 Directorios Principales
-
-├── app/ # Configuración de rutas Next.js
-│ ├── layout.tsx # Layout base de toda la aplicación
-│ ├── page.tsx # Página principal (Home)
-│ └── unidad_1/ # Ruta dinámica para la Unidad 1
-│ └── page.tsx # Página de la Unidad 1
-│
-├── components/ # Componentes reutilizables
-│ ├── GameButton.tsx # Botones interactivos del juego
-│ └── AvatarSelector.tsx # Selector de avatares
-│
-├── contexts/ # Gestión de estado global
-│ └── AudioContext.tsx # Control de música y efectos de sonido
-│
-├── public/ # Recursos estáticos
-│ └── favicon.ico # Icono de la aplicación
-│
-└── node_modules/ # Dependencias instaladas
 
 
 ## 🚀 Instalación
