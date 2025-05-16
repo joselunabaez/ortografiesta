@@ -18,10 +18,7 @@ export default function Ortografiesta() {
   const [showMusicPrompt, setShowMusicPrompt] = useState(true)
   const [showAvatarSelector, setShowAvatarSelector] = useState(false)
   const [selectedAvatar, setSelectedAvatar] = useState<string>('🐱');
-  const [showWelcome, setShowWelcome] = useState(
-    () => !localStorage.getItem('ortografia-welcome-shown')
-  );
-
+  const [showWelcome, setShowWelcome] = useState(false); // Valor inicial por defecto
 
   useEffect(() => {
     const saved = localStorage.getItem('ortografia-avatar')
@@ -81,9 +78,17 @@ export default function Ortografiesta() {
       }
     };
   }, [attemptAutoplay, showWelcome, isMusicPlaying]); // Añadimos isMusicPlaying
+
+  useEffect(() => {
+    const welcomeShown = localStorage.getItem('ortografia-welcome-shown');
+    setShowWelcome(!welcomeShown);
+  }, []);
+
   const handleStart = () => {
-    localStorage.setItem('ortografia-avatar', selectedAvatar);
-    localStorage.setItem('ortografia-welcome-shown', 'true'); // Nuevo flag
+    if (typeof window !== 'undefined') { // Verificar entorno de cliente
+      localStorage.setItem('ortografia-avatar', selectedAvatar);
+      localStorage.setItem('ortografia-welcome-shown', 'true');
+    }
     setShowWelcome(false);
     setShowAvatarSelector(false);
     enableAudio();
@@ -94,13 +99,15 @@ export default function Ortografiesta() {
   };
 
   useEffect(() => {
-  const handleBeforeUnload = () => {
-    localStorage.removeItem('ortografia-welcome-shown');
-  };
+    if (typeof window === 'undefined') return; // Solo en cliente
 
-  window.addEventListener('beforeunload', handleBeforeUnload);
-  return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-}, []);
+    const handleBeforeUnload = () => {
+      localStorage.removeItem('ortografia-welcome-shown');
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
 
   const handleToggleMute = (e: React.MouseEvent) => {
