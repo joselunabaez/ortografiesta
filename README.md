@@ -1,36 +1,35 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎮 Ortografiesta - Aprendizaje Divertido
 
-## Getting Started
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB) 
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![React Router](https://img.shields.io/badge/React_Router-CA4245?style=for-the-badge&logo=react-router&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)
 
-First, run the development server:
+Aplicación interactiva para aprender ortografía española con mecánicas de juego 🚀
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## ✨ Características Principales
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- 🧑🎨 **Sistema de Avatares**: Personaliza tu personaje con emojis divertidos
+- 📚 **Unidades Temáticas**: 6 módulos de aprendizaje con diferentes desafíos
+- 🏆 **Seguimiento de Progreso**: Visualiza tu avance con barras y estrellas
+- 🎨 **Diseño Inmersivo**: Animaciones fluidas y efectos visuales atractivos
+- 🎵 **Sistema de Audio**: Música ambiental y efectos de sonido configurables
+- 📱 **Responsive Design**: Funciona perfectamente en móviles y desktop
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠 Tecnologías Utilizadas
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Tecnología          | Descripción                                                                 |
+|---------------------|-----------------------------------------------------------------------------|
+| **React**           | Biblioteca principal para construcción de interfaces                       |
+| **TypeScript**      | Tipado estático para mejor calidad de código                               |
+| **Tailwind CSS**    | Estilización con clases utilitarias y diseño responsive                    |
+| **React Router**    | Manejo de navegación y rutas                                               |
+| **Vite**            | Entorno de desarrollo ultrarrápido                                         |
+| **Framer Motion**   | Animaciones y transiciones fluidas                                         |
+| **Howler.js**       | Manejo avanzado de audio para efectos y música                             |
 
-## Learn More
+## 🚀 Instalación
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Clona el repositorio:
+```git clone https://github.com/tu-usuario/ortografiesta.git```
