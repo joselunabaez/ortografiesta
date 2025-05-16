@@ -3,9 +3,10 @@
 import type React from "react"
 
 import { useState, useRef, useEffect } from "react"
-import { Star, ArrowLeft, Volume2, Check, X, HelpCircle, Award, Mic } from "lucide-react"
+import { Star, ArrowLeft, Volume2, Check, X, HelpCircle, Award, Mic, VolumeX, Music, Pause } from "lucide-react"
 import confetti from "canvas-confetti"
 import { useRouter } from "next/navigation"
+import { useAudio } from './app/contexts/AudioContext'
 
 // Datos para las actividades
 const letrasConfusasData = [
@@ -79,7 +80,7 @@ const palabrasDictado = [
 ]
 
 // Palabras para sopa de letras
-const palabrasSopa = ["BARCO", "VACA", "ZAPATO", "CIUDAD", "JIRAFA", "GENTE", "BICICLETA", "CABEZA", "LAPIZ", "PAJARO"]
+const palabrasSopa = ["BARCO", "VACA", "ZAPATO", "JIRAFA", "GENTE", "CABEZA"]
 
 // Tipos de actividades
 type Actividad = "diferencias" | "completar" | "dictado" | "sopa"
@@ -102,14 +103,22 @@ export default function Unidad1() {
   const [palabrasSeleccionadas, setPalabrasSeleccionadas] = useState<
     { palabra: string; celdas: { row: number; col: number }[] }[]
   >([])
-  const sopaRef = useRef<HTMLDivElement>(null)
+  const sopaRef = useRef<HTMLDivElement>(null);
+  const { isMusicPlaying, isMuted, toggleMusic, toggleMute } = useAudio();
+  const [selectedAvatar, setSelectedAvatar] = useState("🐱");
 
-  // Mantener los elementos decorativos consistentes
+
+
+  useEffect(() => {
+    const savedAvatar = localStorage.getItem('ortografia-avatar');
+    if (savedAvatar) {
+      setSelectedAvatar(savedAvatar);
+    }
+  }, []);
   const [elementosDecorativosPos, setElementosDecorativosPos] = useState<
     { top: string; left: string; size: string; color: string }[]
   >([])
 
-  // Generar posiciones aleatorias para elementos decorativos una sola vez
   useEffect(() => {
     if (elementosDecorativosPos.length === 0) {
       const elementos = Array(20)
@@ -219,7 +228,7 @@ export default function Unidad1() {
 
   // Generar sopa de letras
   const generarSopaDeLetras = () => {
-    const tamaño = 15
+    const tamaño = 7
     // Inicializar la sopa con espacios vacíos
     const sopa: string[][] = Array(tamaño)
       .fill(0)
@@ -408,7 +417,6 @@ export default function Unidad1() {
     return false
   }
 
-  // Verificar si una celda está en una palabra encontrada
   const esCeldaPalabraEncontrada = (row: number, col: number) => {
     return palabrasSeleccionadas.some(
       (p) => palabrasEncontradas.includes(p.palabra) && p.celdas.some((c) => c.row === row && c.col === col),
@@ -417,77 +425,70 @@ export default function Unidad1() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-yellow-300 to-yellow-200 overflow-hidden relative">
-      {/* Elementos decorativos con posiciones fijas */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {elementosDecorativosPos.map((elem, i) => (
-          <div
-            key={i}
-            className={`absolute rounded-full ${elem.color}`}
-            style={{
-              width: elem.size,
-              height: elem.size,
-              top: elem.top,
-              left: elem.left,
-              opacity: 0.6,
-              animation: `float ${Math.random() * 5 + 5}s ease-in-out infinite`,
-              animationDelay: `${Math.random() * 5}s`,
-            }}
-          />
-        ))}
-      </div>
-
       <div className="container mx-auto px-4 py-8 relative z-10">
         {/* Encabezado */}
-        <header className="mb-8 flex items-center justify-between">
-          <button
-            onClick={volverAlInicio}
-            className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-full hover:bg-purple-700 transition-colors"
-          >
-            <ArrowLeft size={20} />
-            <span>Volver</span>
-          </button>
+        <header className="p-4 flex justify-between items-center relative z-10 mb-8">
+        <button 
+          onClick={() => router.push('/')}
+          className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-full hover:bg-purple-700 transition-colors cursor-pointer"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span>Volver</span>
+        </button>
 
-          <h1 className="text-3xl md:text-4xl font-bold text-center text-purple-800">Unidad 1: Sonidos y Letras</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-center text-purple-800">Unidad 1: Sonidos y Letras</h1>
 
-          <div className="w-24 flex justify-end">
-            <div className="bg-white/80 rounded-full px-3 py-1 flex items-center gap-1">
-              <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-              <span className="font-bold text-purple-800">{puntuacion}</span>
-            </div>
+        <div className="flex items-center gap-2">
+          <div className="bg-white/80 rounded-full px-3 py-1 flex items-center gap-1">
+            <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+            <span className="font-bold text-purple-800">{puntuacion || 0}</span>
           </div>
-        </header>
+          
+          <div className="text-3xl bg-white p-2 rounded-full shadow-md">
+            {selectedAvatar}
+          </div>
 
+          {/* Sound controls */}
+          <button
+            onClick={toggleMute}
+            className="p-3 bg-white/90 rounded-full hover:bg-white transition-colors shadow-md cursor-pointer"
+            title={isMuted ? "Activar sonido" : "Silenciar"}
+          >
+            {isMuted ? (
+              <VolumeX className="w-6 h-6 text-purple-600" />
+            ) : (
+              <Volume2 className="w-6 h-6 text-purple-600" />
+            )}
+          </button>
+        </div>
+      </header>
         {/* Selector de actividades */}
         <div className="flex flex-wrap justify-center gap-4 mb-8">
           <button
             onClick={() => cambiarActividad("diferencias")}
-            className={`px-4 py-2 rounded-full font-bold cursor-pointer ${
-              actividad === "diferencias" ? "bg-teal-400 text-white" : "bg-white/70 text-teal-600 hover:bg-white"
-            } transition-colors`}
+            className={`px-4 py-2 rounded-full font-bold cursor-pointer ${actividad === "diferencias" ? "bg-teal-400 text-white" : "bg-white/70 text-teal-600 hover:bg-white"
+              } transition-colors`}
           >
             Diferencias B/V, C/S/Z, G/J
           </button>
           <button
             onClick={() => cambiarActividad("completar")}
-            className={`px-4 py-2 rounded-full font-bold cursor-pointer ${
-              actividad === "completar" ? "bg-orange-400 text-white" : "bg-white/70 text-orange-600 hover:bg-white"
-            } transition-colors`}
+            className={`px-4 py-2 rounded-full font-bold cursor-pointer ${actividad === "completar" ? "bg-orange-400 text-white" : "bg-white/70 text-orange-600 hover:bg-white"
+              } transition-colors`}
           >
             Completar Palabras
           </button>
           <button
             onClick={() => cambiarActividad("dictado")}
-            className={`px-4 py-2 rounded-full font-bold cursor-pointer ${
-              actividad === "dictado" ? "bg-purple-600 text-white" : "bg-white/70 text-purple-600 hover:bg-white"
-            } transition-colors`}
+            className={`px-4 py-2 rounded-full font-bold cursor-pointer ${actividad === "dictado" ? "bg-purple-600 text-white" : "bg-white/70 text-purple-600 hover:bg-white"
+              } transition-colors`}
           >
             Dictado Interactivo
           </button>
           <button
             onClick={() => cambiarActividad("sopa")}
-            className={`px-4 py-2 rounded-full font-bold cursor-pointer ${
-              actividad === "sopa" ? "bg-red-500 text-white" : "bg-white/70 text-red-500 hover:bg-white"
-            } transition-colors`}
+            className={`px-4 py-2 rounded-full font-bold cursor-pointer ${actividad === "sopa" ? "bg-red-500 text-white" : "bg-white/70 text-red-500 hover:bg-white"
+              } transition-colors`}
           >
             Sopa de Letras
           </button>
@@ -551,9 +552,8 @@ export default function Unidad1() {
                       {[...Array(10)].map((_, i) => (
                         <div
                           key={i}
-                          className={`w-4 h-4 rounded-full ${
-                            i < preguntaActual ? (respuestas[i] ? "bg-green-500" : "bg-red-500") : "bg-gray-300"
-                          }`}
+                          className={`w-4 h-4 rounded-full ${i < preguntaActual ? (respuestas[i] ? "bg-green-500" : "bg-red-500") : "bg-gray-300"
+                            }`}
                         />
                       ))}
                     </div>
@@ -574,13 +574,12 @@ export default function Unidad1() {
                       <button
                         key={index}
                         onClick={() => verificarRespuesta(opcion, palabrasCompletar[preguntaActual].correcta)}
-                        className={`w-20 h-20 text-4xl font-bold rounded-2xl flex items-center justify-center transition-all cursor-pointer ${
-                          mostrarResultado !== null
-                            ? opcion === palabrasCompletar[preguntaActual].correcta
-                              ? "bg-green-500 text-white transform scale-110"
-                              : "bg-red-100 text-gray-400"
-                            : "bg-white text-purple-800 hover:bg-purple-100"
-                        } ${mostrarResultado !== null ? "pointer-events-none" : ""}`}
+                        className={`w-20 h-20 text-4xl font-bold rounded-2xl flex items-center justify-center transition-all cursor-pointer ${mostrarResultado !== null
+                          ? opcion === palabrasCompletar[preguntaActual].correcta
+                            ? "bg-green-500 text-white transform scale-110"
+                            : "bg-red-100 text-gray-400"
+                          : "bg-white text-purple-800 hover:bg-purple-100"
+                          } ${mostrarResultado !== null ? "pointer-events-none" : ""}`}
                       >
                         {opcion}
                       </button>
@@ -643,9 +642,8 @@ export default function Unidad1() {
                       {[...Array(10)].map((_, i) => (
                         <div
                           key={i}
-                          className={`w-4 h-4 rounded-full ${
-                            i < preguntaActual ? (respuestas[i] ? "bg-green-500" : "bg-red-500") : "bg-gray-300"
-                          }`}
+                          className={`w-4 h-4 rounded-full ${i < preguntaActual ? (respuestas[i] ? "bg-green-500" : "bg-red-500") : "bg-gray-300"
+                            }`}
                         />
                       ))}
                     </div>
@@ -732,36 +730,56 @@ export default function Unidad1() {
             </div>
           )}
 
-          {/* Sopa de letras */}
-          {actividad === "sopa" && (
+{/* Sopa de letras para niños */}
+{actividad === "sopa" && (
   <div className="text-center">
     {!actividadCompletada ? (
       <>
-        <h2 className="text-2xl font-bold text-purple-800 mb-4">Sopa de Letras</h2>
-        <p className="text-lg text-purple-600 mb-4">
-          Encuentra las palabras relacionadas con las letras que estamos aprendiendo
-        </p>
-        
+        <div className="bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-400 rounded-xl p-6 shadow-lg mb-6 relative overflow-hidden">
+          {/* Imágenes decorativas en las esquinas */}
+          <div className="absolute top-1 left-1 text-3xl">🚢</div>
+          <div className="absolute top-1 right-1 text-3xl">🦒</div>
+          <div className="absolute bottom-1 left-1 text-3xl">🐄</div>
+          <div className="absolute bottom-1 right-1 text-3xl">👞</div>
+          
+          <h2 className="text-3xl font-bold text-white mb-2 flex items-center justify-center">
+            <span className="mr-2">🔍</span> 
+            Sopa de Letras de Aventuras
+            <span className="ml-2">✨</span>
+          </h2>
+          <p className="text-lg text-white mb-2">
+            ¡Busca las 6 palabras escondidas y conviértete en un detective!
+          </p>
+          <div className="flex justify-center">
+            <div className="flex items-center space-x-1">
+              {[...Array(5)].map((_, i) => (
+                <span key={i} className={`text-2xl ${i < Math.ceil(palabrasEncontradas.length / palabrasSopa.length * 5) ? "text-yellow-300" : "text-gray-300"}`}>
+                  ⭐
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
 
         <div className="flex flex-col md:flex-row gap-6 items-start">
-          <div
-            className="bg-purple-100 p-4 rounded-xl w-full md:w-auto"
+          <div className="bg-blue-100 p-5 rounded-xl w-full md:w-auto shadow-md border-4 border-blue-300 relative"
             ref={sopaRef}
             onMouseLeave={handleCeldaMouseUp}
           >
-            <div className="grid grid-cols-15 gap-0 mx-auto w-max">
+     
+            
+            <div className="grid grid-cols-7 gap-1 mx-auto w-max">
               {sopaLetras.flatMap((fila, rowIndex) =>
                 fila.map((letra, colIndex) => (
                   <div
                     key={`${rowIndex}-${colIndex}`}
-                    className={`w-7 h-7 flex items-center justify-center font-bold text-sm border border-purple-200 select-none cursor-pointer
-                      ${
-                        esCeldaPalabraEncontrada(rowIndex, colIndex)
-                          ? "bg-green-300 text-green-800"
-                          : esCeldaSeleccionada(rowIndex, colIndex)
-                            ? "bg-yellow-200 text-yellow-800"
-                            : "bg-white text-purple-800"
-                      }`}
+                    className={`w-10 h-10 flex items-center justify-center font-bold text-lg rounded-md transition-all duration-200 select-none cursor-pointer transform hover:scale-110
+                    ${esCeldaPalabraEncontrada(rowIndex, colIndex)
+                      ? "bg-green-400 text-white animate-pulse"
+                      : esCeldaSeleccionada(rowIndex, colIndex)
+                        ? "bg-yellow-300 text-purple-800"
+                        : "bg-white text-purple-800 shadow-sm"
+                    }`}
                     onMouseDown={() => handleCeldaMouseDown(rowIndex, colIndex)}
                     onMouseEnter={() => handleCeldaMouseEnter(rowIndex, colIndex)}
                     onMouseUp={handleCeldaMouseUp}
@@ -773,56 +791,156 @@ export default function Unidad1() {
             </div>
           </div>
 
-                    <div className="bg-purple-100 p-4 rounded-xl flex-1">
-                      <h3 className="text-lg font-bold text-purple-800 mb-2">Palabras a encontrar:</h3>
-                      <div className="grid grid-cols-2 gap-2">
-                        {palabrasSopa.map((palabra, index) => (
-                          <div
-                            key={index}
-                            className={`px-3 py-1 rounded-full text-sm font-bold ${
-                              palabrasEncontradas.includes(palabra)
-                                ? "bg-green-300 text-green-800 line-through"
-                                : "bg-white text-purple-800"
-                            }`}
-                          >
-                            {palabra}
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-4 text-purple-600">
-                        <p>
-                          Encontradas: {palabrasEncontradas.length} de {palabrasSopa.length}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="text-6xl mb-4">🎉</div>
-                  <h2 className="text-3xl font-bold text-purple-800 mb-4">¡Sopa de Letras Completada!</h2>
-                  <p className="text-xl text-purple-600 mb-8">Has encontrado todas las palabras. ¡Felicidades!</p>
-
-                  <div className="flex justify-center gap-4">
-                    <button
-                      onClick={() => cambiarActividad(actividad)}
-                      className="bg-teal-400 text-white px-6 py-3 rounded-full font-bold hover:bg-teal-500 transition-colors flex items-center gap-2"
-                    >
-                      <HelpCircle size={20} />
-                      <span>Jugar de nuevo</span>
-                    </button>
-                    <button
-                      onClick={() => cambiarActividad("diferencias")}
-                      className="bg-purple-600 text-white px-6 py-3 rounded-full font-bold hover:bg-purple-700 transition-colors flex items-center gap-2"
-                    >
-                      <Award size={20} />
-                      <span>Volver a inicio</span>
-                    </button>
-                  </div>
-                </div>
-              )}
+          <div className="bg-pink-100 p-5 rounded-xl flex-1 shadow-md border-4 border-pink-300">
+            <h3 className="text-xl font-bold text-purple-800 mb-3 flex items-center justify-center">
+              <span className="mr-2">🎯</span> ¡Encuentra estas palabras! <span className="ml-2">🎯</span>
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Personalizado con iconos para cada palabra */}
+              <div
+                className={`px-4 py-2 rounded-full text-md font-bold transition-all duration-300 flex items-center justify-between ${
+                  palabrasEncontradas.includes("BARCO")
+                    ? "bg-green-400 text-white line-through transform scale-95"
+                    : "bg-white text-purple-800 shadow-sm hover:shadow-md hover:scale-105"
+                }`}
+              >
+                <span>{palabrasEncontradas.includes("BARCO") ? "✓ " : ""} BARCO</span>
+                <span className="text-xl ml-2">🚢</span>
+              </div>
+              <div
+                className={`px-4 py-2 rounded-full text-md font-bold transition-all duration-300 flex items-center justify-between ${
+                  palabrasEncontradas.includes("VACA")
+                    ? "bg-green-400 text-white line-through transform scale-95"
+                    : "bg-white text-purple-800 shadow-sm hover:shadow-md hover:scale-105"
+                }`}
+              >
+                <span>{palabrasEncontradas.includes("VACA") ? "✓ " : ""} VACA</span>
+                <span className="text-xl ml-2">🐄</span>
+              </div>
+              <div
+                className={`px-4 py-2 rounded-full text-md font-bold transition-all duration-300 flex items-center justify-between ${
+                  palabrasEncontradas.includes("ZAPATO")
+                    ? "bg-green-400 text-white line-through transform scale-95"
+                    : "bg-white text-purple-800 shadow-sm hover:shadow-md hover:scale-105"
+                }`}
+              >
+                <span>{palabrasEncontradas.includes("ZAPATO") ? "✓ " : ""} ZAPATO</span>
+                <span className="text-xl ml-2">👞</span>
+              </div>
+              <div
+                className={`px-4 py-2 rounded-full text-md font-bold transition-all duration-300 flex items-center justify-between ${
+                  palabrasEncontradas.includes("JIRAFA")
+                    ? "bg-green-400 text-white line-through transform scale-95"
+                    : "bg-white text-purple-800 shadow-sm hover:shadow-md hover:scale-105"
+                }`}
+              >
+                <span>{palabrasEncontradas.includes("JIRAFA") ? "✓ " : ""} JIRAFA</span>
+                <span className="text-xl ml-2">🦒</span>
+              </div>
+              <div
+                className={`px-4 py-2 rounded-full text-md font-bold transition-all duration-300 flex items-center justify-between ${
+                  palabrasEncontradas.includes("GENTE")
+                    ? "bg-green-400 text-white line-through transform scale-95"
+                    : "bg-white text-purple-800 shadow-sm hover:shadow-md hover:scale-105"
+                }`}
+              >
+                <span>{palabrasEncontradas.includes("GENTE") ? "✓ " : ""} GENTE</span>
+                <span className="text-xl ml-2">👥</span>
+              </div>
+              <div
+                className={`px-4 py-2 rounded-full text-md font-bold transition-all duration-300 flex items-center justify-between ${
+                  palabrasEncontradas.includes("CABEZA")
+                    ? "bg-green-400 text-white line-through transform scale-95"
+                    : "bg-white text-purple-800 shadow-sm hover:shadow-md hover:scale-105"
+                }`}
+              >
+                <span>{palabrasEncontradas.includes("CABEZA") ? "✓ " : ""} CABEZA</span>
+                <span className="text-xl ml-2">👤</span>
+              </div>
             </div>
-          )}
+            
+            <div className="mt-6 bg-purple-200 p-3 rounded-lg text-purple-800 font-bold">
+              <p className="flex items-center justify-center">
+                <span className="text-xl mr-2">📊</span>
+                ¡Has encontrado {palabrasEncontradas.length} de 6 palabras!
+              </p>
+            </div>
+            
+            <div className="mt-4 text-purple-700 text-sm italic">
+              Pista: Las palabras pueden estar en horizontal, vertical o diagonal.
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <button
+            onClick={() => cambiarActividad(actividad)}
+            className="bg-teal-400 text-white px-6 py-3 rounded-full font-bold hover:bg-teal-500 transition-colors flex items-center gap-2 mx-auto cursor-pointer"
+          >
+            <span>🔄</span>
+            <span>Reiniciar juego</span>
+          </button>
+        </div>
+      </>
+    ) : (
+      <div className="text-center py-8 bg-gradient-to-r from-purple-200 via-pink-200 to-blue-200 rounded-xl p-8 shadow-lg">
+        <div className="animate-bounce text-7xl mb-6">🎉</div>
+        <h2 className="text-4xl font-bold text-purple-800 mb-4">¡WOW! ¡LO LOGRASTE!</h2>
+        <p className="text-2xl text-purple-600 mb-8">Has encontrado todas las palabras. ¡Eres un detective increíble!</p>
+        
+        <div className="flex justify-center mb-6">
+          {[...Array(5)].map((_, i) => (
+            <span key={i} className="text-4xl text-yellow-400 animate-pulse">⭐</span>
+          ))}
+        </div>
+        
+        <div className="grid grid-cols-3 gap-4 mb-8 max-w-md mx-auto">
+          <div className="bg-white p-2 rounded-lg shadow-md transform rotate-3 animate-pulse delay-100">
+            <span className="text-4xl">🚢</span>
+            <div className="text-sm font-bold text-purple-800">BARCO</div>
+          </div>
+          <div className="bg-white p-2 rounded-lg shadow-md transform -rotate-2 animate-pulse delay-200">
+            <span className="text-4xl">🐄</span>
+            <div className="text-sm font-bold text-purple-800">VACA</div>
+          </div>
+          <div className="bg-white p-2 rounded-lg shadow-md transform rotate-2 animate-pulse delay-300">
+            <span className="text-4xl">👞</span>
+            <div className="text-sm font-bold text-purple-800">ZAPATO</div>
+          </div>
+          <div className="bg-white p-2 rounded-lg shadow-md transform -rotate-3 animate-pulse delay-400">
+            <span className="text-4xl">🦒</span>
+            <div className="text-sm font-bold text-purple-800">JIRAFA</div>
+          </div>
+          <div className="bg-white p-2 rounded-lg shadow-md transform rotate-1 animate-pulse delay-500">
+            <span className="text-4xl">👥</span>
+            <div className="text-sm font-bold text-purple-800">GENTE</div>
+          </div>
+          <div className="bg-white p-2 rounded-lg shadow-md transform -rotate-1 animate-pulse delay-600">
+            <span className="text-4xl">👤</span>
+            <div className="text-sm font-bold text-purple-800">CABEZA</div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap justify-center gap-4">
+          <button
+            onClick={() => cambiarActividad(actividad)}
+            className="bg-teal-500 text-white px-8 py-4 rounded-full font-bold hover:bg-teal-600 transition-transform hover:scale-105 shadow-md flex items-center gap-2"
+          >
+            <span>🎮</span>
+            <span>¡Jugar de nuevo!</span>
+          </button>
+          <button
+            onClick={() => cambiarActividad("diferencias")}
+            className="bg-purple-600 text-white px-8 py-4 rounded-full font-bold hover:bg-purple-700 transition-transform hover:scale-105 shadow-md flex items-center gap-2"
+          >
+            <span>🏠</span>
+            <span>Volver a inicio</span>
+          </button>
+        </div>
+      </div>
+    )}
+  </div>
+)}
         </div>
       </div>
     </div>

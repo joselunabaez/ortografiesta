@@ -1,163 +1,144 @@
 "use client"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { Star, Music, Volume2, VolumeX, Pause } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useAudio } from './app/contexts/AudioContext'
+
 export default function Ortografiesta() {
   const router = useRouter();
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
-  const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
-  const [showMusicPrompt, setShowMusicPrompt] = useState(true);
-  
+  const {
+    isMusicPlaying,
+    isMuted,
+    toggleMusic,
+    toggleMute,
+    attemptAutoplay,
+    enableAudio
+  } = useAudio();
+
+  const [showMusicPrompt, setShowMusicPrompt] = useState(true)
+  const [showAvatarSelector, setShowAvatarSelector] = useState(false)
+  const [selectedAvatar, setSelectedAvatar] = useState<string>('🐱');
+  const [showWelcome, setShowWelcome] = useState(
+    () => !localStorage.getItem('ortografia-welcome-shown')
+  );
+
+
   useEffect(() => {
-    // Create style for wiggle animation
-    const style = document.createElement("style");
+    const saved = localStorage.getItem('ortografia-avatar')
+    if (saved) {
+      setSelectedAvatar(saved)
+      setShowAvatarSelector(false)
+    } else {
+      setShowAvatarSelector(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    const style = document.createElement('style');
     style.textContent = `
     @keyframes wiggle {
-      0%, 100% { transform: rotate(-3deg); }
-      50% { transform: rotate(3deg); }
+      0%,100% { transform: rotate(-3deg) }
+      50%    { transform: rotate(3deg) }
     }
-    .animate-wiggle {
-      animation: wiggle 3s ease-in-out infinite;
+    .animate-wiggle { animation: wiggle 3s ease-in-out infinite }
+    @keyframes pop-in {
+      from { opacity: 0; transform: scale(0.5) }
+      to   { opacity: 1; transform: scale(1) }
     }
-    `;
+    .animate-pop-in { animation: pop-in 0.5s ease-out forwards }
+  `;
     document.head.appendChild(style);
 
-    const audio = new Audio('/sounds/infantil.m4a'); // Make sure this path is correct
-    audio.loop = true;
-    audio.volume = 0.5;
-    setAudioRef(audio);
-    
-    const enableAudio = () => {
-      if (audio) {
-        if (audio.paused) {
-          const playPromise = audio.play();
-          if (playPromise !== undefined) {
-            playPromise
-              .then(() => {
-                setIsMusicPlaying(true);
-                setShowMusicPrompt(false);
-              })
-              .catch(error => {
-                console.log("Play failed:", error);
-                setIsMusicPlaying(false);
-              });
-          }
-        }
-      }
-      
-      document.removeEventListener('click', enableAudio);
-      document.removeEventListener('touchstart', enableAudio);
-      document.removeEventListener('keydown', enableAudio);
-    };
+    let interactionListener: any;
 
-    // Add event listeners for user interaction
-    document.addEventListener('click', enableAudio);
-    document.addEventListener('touchstart', enableAudio);
-    document.addEventListener('keydown', enableAudio);
-    
-    // Try autoplay anyway (might work in some browsers/situations)
-    const attemptAutoplay = async () => {
-      try {
-        audio.muted = true;
-        await audio.play();
-        setTimeout(() => {
-          audio.muted = false;
-          setIsMusicPlaying(true);
-          setShowMusicPrompt(false);
-        }, 100);
-      } catch (err) {
-        console.log("Autoplay attempt failed:", err);
-        audio.muted = false;
+    if (!showWelcome) {
+      const saved = localStorage.getItem('ortografia-avatar');
+      if (saved) {
+        interactionListener = (e: Event) => {
+          // Solo activar audio si no está ya reproduciéndose
+          if (!isMusicPlaying) {
+            attemptAutoplay().then(() => {
+              setShowMusicPrompt(false);
+              if (!isMusicPlaying) toggleMusic();
+            });
+          }
+        };
+
+        // Agregar listeners con { once: true } para que solo se ejecuten una vez
+        document.addEventListener('click', interactionListener, { once: true });
+        document.addEventListener('touchstart', interactionListener, { once: true });
+        document.addEventListener('keydown', interactionListener, { once: true });
       }
-    };
-    
-    attemptAutoplay();
-    
+    }
+
     return () => {
       document.head.removeChild(style);
-      if (audio) {
-        audio.pause();
-        audio.src = "";
+      // Limpiar listeners específicamente
+      if (interactionListener) {
+        document.removeEventListener('click', interactionListener);
+        document.removeEventListener('touchstart', interactionListener);
+        document.removeEventListener('keydown', interactionListener);
       }
-      // Clean up event listeners
-      document.removeEventListener('click', enableAudio);
-      document.removeEventListener('touchstart', enableAudio);
-      document.removeEventListener('keydown', enableAudio);
     };
-  }, []);
-
-  const toggleMusic = () => {
-    if (audioRef) {
-      if (isMusicPlaying) {
-        audioRef.pause();
-      } else {
-        const playPromise = audioRef.play();
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-            })
-            .catch(error => {
-              console.log("Play failed:", error);
-            });
-        }
-      }
-      setIsMusicPlaying(!isMusicPlaying);
+  }, [attemptAutoplay, showWelcome, isMusicPlaying]); // Añadimos isMusicPlaying
+  const handleStart = () => {
+    localStorage.setItem('ortografia-avatar', selectedAvatar);
+    localStorage.setItem('ortografia-welcome-shown', 'true'); // Nuevo flag
+    setShowWelcome(false);
+    setShowAvatarSelector(false);
+    enableAudio();
+    attemptAutoplay().then(() => {
       setShowMusicPrompt(false);
-    }
+      toggleMusic();
+    });
   };
 
-  const toggleMute = () => {
-    if (audioRef) {
-      audioRef.muted = !audioRef.muted;
-      setIsMuted(!isMuted);
-    }
+  useEffect(() => {
+  const handleBeforeUnload = () => {
+    localStorage.removeItem('ortografia-welcome-shown');
   };
+
+  window.addEventListener('beforeunload', handleBeforeUnload);
+  return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+}, []);
+
+
+  const handleToggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    toggleMute()
+  }
+
+  useEffect(() => {
+    const animate = () => {
+      document.documentElement.style.setProperty(
+        '--hue', `${(Date.now() / 50) % 360}deg`
+      );
+      requestAnimationFrame(animate);
+    };
+    animate();
+  }, []);
 
   const navegarAUnidad = (unidad: number) => {
     if (unidad === 1) {
       router.push("/unidad_1")
     } else {
-      // Para futuras unidades
       alert("Esta unidad estará disponible próximamente")
     }
   }
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-yellow-300 to-yellow-200 overflow-hidden relative">
-      {/* Decorative elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className={`absolute rounded-full ${i % 3 === 0 ? "bg-purple-500" : i % 3 === 1 ? "bg-teal-400" : "bg-orange-400"
-              }`}
-            style={{
-              width: `${Math.random() * 20 + 10}px`,
-              height: `${Math.random() * 20 + 10}px`,
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              opacity: 0.6,
-              animation: `float ${Math.random() * 5 + 5}s ease-in-out infinite`,
-              animationDelay: `${Math.random() * 5}s`,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Clouds */}
-      <div
-        className="absolute top-20 left-10 w-32 h-16 bg-white rounded-full opacity-80 animate-pulse"
-        style={{ animationDuration: "8s" }}
-      />
-      <div
-        className="absolute top-40 right-20 w-40 h-20 bg-white rounded-full opacity-80 animate-pulse"
-        style={{ animationDuration: "10s" }}
-      />
-
       <div className="container mx-auto px-4 py-8 relative z-10">
         {/* Header */}
         <header className="mb-12 text-center relative">
+          <div className="absolute top-4 left-4 flex items-center gap-2">
+            <button
+              onClick={() => setShowAvatarSelector(true)}
+              className="cursor-pointer text-4xl bg-white p-2 rounded-full shadow-md hover:scale-110 transition-transform"
+              title="Cambiar avatar"
+            >
+              {selectedAvatar}
+            </button>
+          </div>
           <div className="inline-block relative">
             <div className="absolute -inset-4 bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 rounded-3xl opacity-75 blur-xl animate-pulse"></div>
             <h1 className="text-5xl md:text-6xl font-bold text-white bg-red-500 px-8 py-4 rounded-3xl shadow-lg inline-block relative">
@@ -172,7 +153,7 @@ export default function Ortografiesta() {
         </header>
 
         {/* Botones */}
-        <div className="flex flex-col md:flex-row justify-center gap-4 md:gap-8 mb-12">
+        <div className="flex flex-col md:flex-row justify-center gap-4 md:gap-8 mb-12" onClick={() => navegarAUnidad(1)}>
           <button
             className="btn bg-gradient-to-b from-orange-400 to-orange-500 text-white text-xl md:text-2xl font-bold py-4 px-8 rounded-full shadow-lg transition-all hover:shadow-xl active:scale-95 flex items-center justify-center gap-2 relative overflow-hidden group cursor-pointer"
           >
@@ -181,7 +162,7 @@ export default function Ortografiesta() {
               JUGAR
               <span className="ml-2 text-2xl">🎮</span>
             </span>
-          </button>
+          </button >
           <button className="btn bg-gradient-to-b from-teal-400 to-teal-500 text-white text-xl md:text-2xl font-bold py-4 px-8 rounded-full shadow-lg transition-all hover:shadow-xl active:scale-95 relative overflow-hidden group cursor-pointer">
             <div className="absolute inset-0 bg-gradient-to-r from-teal-200/0 via-teal-200/30 to-teal-200/0 group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
             <span className="relative flex items-center">
@@ -191,29 +172,14 @@ export default function Ortografiesta() {
           </button>
         </div>
 
-         {/* Sound controls - more visible now */}
-        <div className="absolute top-4 right-4 flex gap-2">
+        {/* Sound controls - more visible now */}
+        <div className="audio-controls absolute top-4 right-4 flex gap-2">
           <button
-            onClick={toggleMusic}
-            className="p-3 bg-white/90 rounded-full hover:bg-white transition-colors shadow-md"
-            title={isMusicPlaying ? "Pausar música" : "Iniciar música"}
+            onClick={handleToggleMute}
+            className="p-3 bg-white/90 rounded-full hover:bg-white transition shadow-md cursor-pointer"
+            title={isMuted ? 'Activar sonido' : 'Silenciar'}
           >
-            {isMusicPlaying ? (
-              <Music className="w-6 h-6 text-purple-600" />
-            ) : (
-              <Pause className="w-6 h-6 text-purple-600" />
-            )}
-          </button>
-          <button
-            onClick={toggleMute}
-            className="p-3 bg-white/90 rounded-full hover:bg-white transition-colors shadow-md"
-            title={isMuted ? "Activar sonido" : "Silenciar"}
-          >
-            {isMuted ? (
-              <VolumeX className="w-6 h-6 text-purple-600" />
-            ) : (
-              <Volume2 className="w-6 h-6 text-purple-600" />
-            )}
+            {isMuted ? <VolumeX className="w-6 h-6 text-purple-600" /> : <Volume2 className="w-6 h-6 text-purple-600" />}
           </button>
         </div>
         {/* Units */}
@@ -233,21 +199,6 @@ export default function Ortografiesta() {
               }
               onClick={() => navegarAUnidad(unit.unidad)}
             >
-              {/* Fondo con burbujas */}
-              <div className="absolute inset-0 opacity-10">
-                {[...Array(6)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="absolute rounded-full bg-white"
-                    style={{
-                      width: `${Math.random() * 30 + 10}px`,
-                      height: `${Math.random() * 30 + 10}px`,
-                      top: `${Math.random() * 100}%`,
-                      left: `${Math.random() * 100}%`,
-                    }}
-                  />
-                ))}
-              </div>
 
               {/* Efecto de brillo en el borde */}
               <div className="absolute inset-0 rounded-3xl border-4 border-white/0 group-hover:border-white/30 transition-all duration-300"></div>
@@ -318,6 +269,104 @@ export default function Ortografiesta() {
           </div>
         </div>
       </div>
+
+      {showAvatarSelector && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-3xl text-center max-w-md animate-pop-in">
+            <h2 className="text-3xl font-bold mb-4 text-purple-600">¡Elige tu avatar!</h2>
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              {['🐱', '🐶', '🦊', '🐻', '🐨', '🐵'].map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => setSelectedAvatar(emoji)}
+                  className={`text-5xl p-4 rounded-2xl transition-all cursor-pointer ${selectedAvatar === emoji
+                    ? 'bg-yellow-400 scale-110'
+                    : 'bg-gray-100 hover:bg-yellow-200'
+                    }`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => {
+                localStorage.setItem('ortografia-avatar', selectedAvatar);
+                setShowAvatarSelector(false);
+                enableAudio();
+                setShowMusicPrompt(false);
+                handleStart
+              }}
+              className="cursor-pointer bg-green-500 text-white px-6 py-3 rounded-full text-xl font-bold hover:bg-green-600 transition-colors cursor-pointer"
+            >
+              Seleccionar
+            </button>
+          </div>
+        </div>
+      )}
+
+
+      {showWelcome && (
+        <div className="fixed inset-0 bg-[black]/90 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="relative bg-gradient-to-br from-yellow-300 via-blue-300 to-pink-300 p-2 rounded-[40px] text-center max-w-2xl animate-pop-in shadow-2xl border-4 border-white">
+            <div className="bg-white p-8 rounded-[32px] relative overflow-hidden">
+
+              {/* Elementos decorativos */}
+              <div className="absolute -top-16 left-0 right-0 flex justify-center gap-8">
+                <div className="animate-bounce text-6xl">🎈</div>
+                <div className="animate-bounce text-6xl delay-150">🎉</div>
+                <div className="animate-bounce text-6xl delay-300">🎁</div>
+              </div>
+
+              <div className="absolute -bottom-16 -right-16 w-40 h-40 bg-yellow-200 rounded-full opacity-30"></div>
+
+              {/* Contenido principal */}
+              <div className="relative z-10">
+                <h1 className="text-6xl font-bold mb-12 font-comic bg-gradient-to-r from-purple-600 to-red-500  bg-clip-text text-transparent">
+                  ¡Hola Amiguito/a!
+                </h1>
+
+                <div className="mb-8 space-y-4 text-xl">
+                  <div className="flex items-center gap-3 bg-blue-100 p-3  justify-center rounded-2xl animate-bounce">
+                    <span className="text-4xl">🧩</span>
+                    <p className="font-bold text-blue-800">Aprende ortografía<br /><span className="text-2xl">jugando divertidos juegos</span></p>
+                  </div>
+
+                  <div className="flex items-center gap-3 bg-yellow-100 p-3 justify-center rounded-2xl animate-bounce delay-100">
+                    <span className="text-4xl">🦸</span>
+                    <p className="font-bold text-yellow-800">Conviértete en<br /><span className="text-2xl">un súper héroe de las letras</span></p>
+                  </div>
+
+                  <div className="flex items-center gap-3 bg-green-100 p-3 justify-center rounded-2xl animate-bounce delay-100">
+                    <span className="text-4xl">🏅</span>
+                    <p className="font-bold text-green-800">Gana premios y<br /><span className="text-2xl">diviértete aprendiendo</span></p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    handleStart();
+                    if (!isMusicPlaying) {
+                      toggleMusic();
+                    }
+                  }}
+                  className="cursor-pointer  bg-gradient-to-r from-green-400 to-blue-400 text-white text-3xl px-10 py-5 rounded-2xl font-bold hover:scale-105 transition-transform duration-300 shadow-xl hover:shadow-2xl relative overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                  <span className="flex items-center gap-3 relative">
+                    ¡Jugar y Aprender!
+                  </span>
+                </button>
+              </div>
+
+              {/* Animalitos decorativos */}
+              <div className="absolute -left-20 -bottom-20 w-40 h-40 bg-[url('https://i.pinimg.com/originals/49/72/29/4972294b4a86b965a9f8df97371d5c3f.png')] bg-contain bg-no-repeat opacity-80 animate-float"></div>
+              <div className="absolute -right-20 -top-20 w-40 h-40 bg-[url('https://www.pngmart.com/files/15/Cute-Raccoon-PNG-Transparent-Image.png')] bg-contain bg-no-repeat opacity-80 animate-float-delayed"></div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+
+
