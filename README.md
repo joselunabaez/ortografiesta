@@ -4,7 +4,6 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![React Router](https://img.shields.io/badge/React_Router-CA4245?style=for-the-badge&logo=react-router&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)
 
 Aplicación interactiva para aprender ortografía española con mecánicas de juego 🚀
 
@@ -25,9 +24,6 @@ Aplicación interactiva para aprender ortografía española con mecánicas de ju
 | **TypeScript**      | Tipado estático para mejor calidad de código                               |
 | **Tailwind CSS**    | Estilización con clases utilitarias y diseño responsive                    |
 | **React Router**    | Manejo de navegación y rutas                                               |
-| **Vite**            | Entorno de desarrollo ultrarrápido                                         |
-| **Framer Motion**   | Animaciones y transiciones fluidas                                         |
-| **Howler.js**       | Manejo avanzado de audio para efectos y música                             |
 
 ## 🚀 Instalación
 
